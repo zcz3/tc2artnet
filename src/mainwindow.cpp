@@ -55,8 +55,11 @@ void MainWindow::setTimeStamp(TimecodeFrame frame)
 
 
 void MainWindow::setControls(
+    bool ltc_enabled,
     QStringList audio_device_list,
     int audio_device_index,
+    QStringList midi_device_list,
+    int midi_device_index,
     bool artnet_loopback,
     bool artnet_external,
     QString artnet_ip,
@@ -65,10 +68,20 @@ void MainWindow::setControls(
   _combo_audio->addItem(tr("[Select device]"));
   _combo_audio->addItems(audio_device_list);
 
-  if(audio_device_index >= 0 || audio_device_index < audio_device_list.size())
+  if(audio_device_index >= 0 && audio_device_index < audio_device_list.size())
     _combo_audio->setCurrentIndex(audio_device_index + 1);
   else
     _combo_audio->setCurrentIndex(0);
+
+  _combo_midi->addItem(tr("[Select device]"));
+  _combo_midi->addItems(midi_device_list);
+
+  if(midi_device_index >= 0 && midi_device_index < midi_device_list.size())
+    _combo_midi->setCurrentIndex(midi_device_index + 1);
+  else
+    _combo_midi->setCurrentIndex(0);
+
+  ltc_enabled ? _radio_ltc->setChecked(true) : _radio_mtc->setChecked(true);
 
   _check_loopback->setChecked(artnet_loopback);
   _check_external->setChecked(artnet_external);
@@ -122,21 +135,35 @@ void MainWindow::createWidgets()
   _label_status->setText("starting up");
   _vbox_outer->addWidget(_label_status);
 
-  // Midst: audio input settings
+  // Midst: timecode input settings
 
-  _gbox_audio = new QGroupBox(tr("LTC Input"));
-  _vbox_outer->addWidget(_gbox_audio);
-  _vbox_audio = new QVBoxLayout(_gbox_audio);
+  _gbox_input = new QGroupBox(tr("Timecode Input"));
+  _vbox_outer->addWidget(_gbox_input);
+  _vbox_input = new QVBoxLayout(_gbox_input);
+
+  _hbox_input = new QHBoxLayout;
+  _vbox_input->addLayout(_hbox_input);
+  _radio_ltc = new QRadioButton("LTC");
+  _radio_ltc->setChecked(true);
+  _hbox_input->addWidget(_radio_ltc);
+  _radio_mtc = new QRadioButton("MTC");
+  _hbox_input->addWidget(_radio_mtc);
 
   _label_audio = new QLabel(tr("Audio device"));
-  _vbox_audio->addWidget(_label_audio);
-
+  _vbox_input->addWidget(_label_audio);
   _combo_audio = new QComboBox;
-  _vbox_audio->addWidget(_combo_audio);
+  _vbox_input->addWidget(_combo_audio);
+
+  _label_midi = new QLabel(tr("MIDI device"));
+  _label_midi->setVisible(false);
+  _vbox_input->addWidget(_label_midi);
+  _combo_midi = new QComboBox;
+  _combo_midi->setVisible(false);
+  _vbox_input->addWidget(_combo_midi);
 
   // Lower window: settings
 
-  _gbox_settings = new QGroupBox(tr("Art-Net Output"));
+  _gbox_settings = new QGroupBox(tr("Art-Net Timecode Output"));
   _vbox_outer->addWidget(_gbox_settings);
   _vbox_settings = new QVBoxLayout(_gbox_settings);
 
@@ -167,8 +194,26 @@ void MainWindow::createWidgets()
 
 void MainWindow::connectSignals()
 {
+  connect(_radio_ltc, &QRadioButton::toggled, [&](bool checked){
+    // We have to hide everything first, otherwise layout gets screwed up
+    _label_audio->setVisible(false);
+    _combo_audio->setVisible(false);
+    _label_midi->setVisible(false);
+    _combo_midi->setVisible(false);
+
+    _label_audio->setVisible(checked);
+    _combo_audio->setVisible(checked);
+    _label_midi->setVisible(!checked);
+    _combo_midi->setVisible(!checked);
+  });
+  connect(_radio_ltc, &QRadioButton::toggled, this, &MainWindow::inputTypeChanged);
+
   connect(_combo_audio, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), [&](int index){
     audioDeviceChanged(--index);
+  });
+
+  connect(_combo_midi, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), [&](int index){
+    midiDeviceChanged(--index);
   });
 
   connect(_check_loopback, &QCheckBox::toggled, this, &MainWindow::artnetLoopbackChanged);

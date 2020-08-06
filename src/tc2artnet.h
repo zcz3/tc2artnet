@@ -7,6 +7,7 @@
 
 #include "transmitter.h"
 #include "ltcreceiver.h"
+#include "mtcreceiver.h"
 #include "mainwindow.h"
 
 
@@ -32,9 +33,11 @@ private:
   void startup();
   void loadSettings();
   void saveSettings();
+  void kickReceiver();
 
-  Transmitter *_transmitter;
   LTCReceiver *_ltc_receiver;
+  MTCReceiver *_mtc_receiver;
+  Transmitter *_transmitter;
   MainWindow *_mainwindow;
 
   QTimer _timeout {};
@@ -42,7 +45,9 @@ private:
   TimecodeType _locked_type {TimecodeType::SMPTE30};
 
   // Settings
+  bool _ltc_enabled {true};
   int _audio_device_index {-1};
+  int _midi_device_index {-1};
   bool _artnet_loopback {true};
   bool _artnet_external {false};
   uint32_t _artnet_ip {0};

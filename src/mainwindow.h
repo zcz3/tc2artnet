@@ -10,6 +10,7 @@
 #include <QPushButton>
 #include <QComboBox>
 #include <QSpinBox>
+#include <QRadioButton>
 #include <QTimer>
 
 #include "timecode_frame.h"
@@ -26,8 +27,11 @@ public:
   void setStatus(bool error, QString message);
   void setTimeStamp(TimecodeFrame frame);
   void setControls(
+      bool ltc_enabled,
       QStringList audio_device_list,
       int audio_device_index,
+      QStringList midi_device_list,
+      int midi_device_index,
       bool artnet_loopback,
       bool artnet_external,
       QString artnet_ip,
@@ -37,7 +41,9 @@ public:
 
 signals:
   void resetTimeStampClicked();
+  void inputTypeChanged(bool ltc_enabled);
   void audioDeviceChanged(int index);
+  void midiDeviceChanged(int index);
   void artnetLoopbackChanged(bool enabled);
   void artnetExternalChanged(bool enabled);
   void artnetIPChanged(QString ip);
@@ -53,11 +59,18 @@ private:
   QLabel *_label_status {nullptr};
   QLabel *_label_timestamp {nullptr};
 
-  // Midst: audio input settings
-  QGroupBox *_gbox_audio {nullptr};
-  QVBoxLayout *_vbox_audio {nullptr};
+  // Midst: timecode input settings
+  QGroupBox *_gbox_input {nullptr};
+  QVBoxLayout *_vbox_input {nullptr};
+  QHBoxLayout *_hbox_input {nullptr};
+  QRadioButton *_radio_ltc {nullptr};
+  QRadioButton *_radio_mtc {nullptr};
+
   QLabel *_label_audio {nullptr};
   QComboBox *_combo_audio {nullptr};
+
+  QLabel *_label_midi {nullptr};
+  QComboBox *_combo_midi {nullptr};
 
   // Lower window: Art-Net output settings
   QGroupBox *_gbox_settings {nullptr};

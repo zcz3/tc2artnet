@@ -25,6 +25,25 @@ HEADERS += \
   transmitter.h \
   timecode_frame.h
 
+win32 {
+    # Keep windows headers happy
+    DEFINES += UNICODE=1 _UNICODE=1
+}
+
+win32 {
+  DEFINES += ENABLE_MTC=1
+
+  SOURCES += \
+    mtcreceiver.cpp \
+    mididev_win32.cpp
+
+  HEADERS += \
+    mtcreceiver.h \
+    mididev.h
+
+  LIBS += -lWinmm
+}
+
 # Compile libltc on Windows using WSL:
 #   $ export CC=x86_64-w64-mingw32-gcc
 #   $ ./configure --prefix=/opt/libltc-win32/ --host=x86_64-w64-mingw32
