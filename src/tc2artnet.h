@@ -7,8 +7,11 @@
 
 #include "transmitter.h"
 #include "ltcreceiver.h"
-#include "mtcreceiver.h"
 #include "mainwindow.h"
+
+#ifdef ENABLE_MTC
+#include "mtcreceiver.h"
+#endif
 
 
 /**
@@ -36,7 +39,9 @@ private:
   void kickReceiver();
 
   LTCReceiver *_ltc_receiver;
+#ifdef ENABLE_MTC
   MTCReceiver *_mtc_receiver;
+#endif
   Transmitter *_transmitter;
   MainWindow *_mainwindow;
 

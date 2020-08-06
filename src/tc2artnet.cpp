@@ -12,7 +12,9 @@ TC2ArtNet::TC2ArtNet(QObject *parent)
   qRegisterMetaType<TimecodeFrame>("TimecodeFrame");
 
   _ltc_receiver = new LTCReceiver;
+#ifdef ENABLE_MTC
   _mtc_receiver = new MTCReceiver;
+#endif
   _transmitter = new Transmitter;
   _mainwindow = new MainWindow;
 
@@ -26,6 +28,7 @@ TC2ArtNet::TC2ArtNet(QObject *parent)
   }, Qt::QueuedConnection);
   connect(_ltc_receiver, &LTCReceiver::newFrame, this, &TC2ArtNet::processFrame);
 
+#ifdef ENABLE_MTC
   connect(_mtc_receiver, &MTCReceiver::statusChanged, this, [&](bool error, QString message) {
     if(!_ltc_enabled)
     {
@@ -35,6 +38,7 @@ TC2ArtNet::TC2ArtNet(QObject *parent)
     }
   }, Qt::QueuedConnection);
   connect(_mtc_receiver, &MTCReceiver::newFrame, this, &TC2ArtNet::processFrame);
+#endif
 
   _timeout.setInterval(1000);
   _timeout.setSingleShot(true);
@@ -45,7 +49,9 @@ TC2ArtNet::TC2ArtNet(QObject *parent)
 TC2ArtNet::~TC2ArtNet()
 {
   delete _ltc_receiver;
+#ifdef ENABLE_MTC
   delete _mtc_receiver;
+#endif
   delete _transmitter;
   delete _mainwindow;
 }
@@ -60,7 +66,9 @@ int TC2ArtNet::run(QApplication *app)
   QTimer::singleShot(0, this, &TC2ArtNet::startup);
   int r = app->exec();
   _ltc_receiver->stop();
+#ifdef ENABLE_MTC
   _mtc_receiver->stop();
+#endif
   saveSettings();
 
   return r;
@@ -145,7 +153,11 @@ void TC2ArtNet::startup()
         _ltc_enabled,
         _ltc_receiver->deviceList(),
         _audio_device_index,
+#ifdef ENABLE_MTC
         _mtc_receiver->deviceList(),
+#else
+        QStringList(),
+#endif
         _midi_device_index,
         _artnet_loopback,
         _artnet_external,
@@ -187,11 +199,19 @@ void TC2ArtNet::loadSettings()
 {
   QSettings settings;
 
+#ifdef ENABLE_MTC
   _ltc_enabled = settings.value("input_type", "ltc").toString() == "ltc";
+#else
+  _ltc_enabled = true;
+#endif
   QString audio_device_name = settings.value("audio_device_name", "").toString().trimmed();
   _audio_device_index = _ltc_receiver->deviceList().indexOf(audio_device_name);
   QString midi_device_name = settings.value("midi_device_name", "").toString();
+#ifdef ENABLE_MTC
   _midi_device_index = _mtc_receiver->deviceList().indexOf(midi_device_name);
+#else
+  _midi_device_index = -1;
+#endif
   _artnet_loopback = settings.value("artnet_loopback", true).toBool();
   _artnet_external = settings.value("artnet_external", false).toBool();
   _artnet_ip = settings.value("artnet_ip", (10 << 24) + (99 << 16) + 10).toInt();
@@ -214,11 +234,13 @@ void TC2ArtNet::saveSettings()
 
   settings.setValue("audio_device_name", audio_device_name);
 
+#ifdef ENABLE_MTC
   QString midi_device_name;
   if(_midi_device_index >= 0 && _midi_device_index < _mtc_receiver->deviceList().size())
     midi_device_name = _mtc_receiver->deviceList()[_midi_device_index];
 
   settings.setValue("midi_device_name", midi_device_name);
+#endif
 
   settings.setValue("artnet_loopback", _artnet_loopback);
   settings.setValue("artnet_external", _artnet_external);
@@ -231,7 +253,9 @@ void TC2ArtNet::kickReceiver()
 {
   _timeout.stop();
   _ltc_receiver->stop();
+#ifdef ENABLE_MTC
   _mtc_receiver->stop();
+#endif
   _locked = false;
 
   _mainwindow->setStatus(true, "opening device");
@@ -241,9 +265,11 @@ void TC2ArtNet::kickReceiver()
     _ltc_receiver->setDevice(_audio_device_index);
     _ltc_receiver->start();
   }
+#ifdef ENABLE_MTC
   else
   {
     _mtc_receiver->setDevice(_midi_device_index);
     _mtc_receiver->start();
   }
+#endif
 }

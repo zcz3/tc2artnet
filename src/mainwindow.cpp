@@ -88,6 +88,12 @@ void MainWindow::setControls(
   _edit_external_ip->setEnabled(artnet_external);
   _edit_external_ip->setText(artnet_ip);
   _spin_adjust->setValue(timestamp_adjust);
+
+#ifndef ENABLE_MTC
+  _radio_ltc->setChecked(true);
+  _radio_ltc->hide();
+  _radio_mtc->hide();
+#endif
 }
 
 
