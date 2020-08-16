@@ -1,0 +1,81 @@
+name: Windows Build
+
+on: [push]
+
+jobs:
+  build-qt:
+    name: Windows Qt Build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          path: tc2artnet
+      
+      - uses: actions/cache@v2
+        id: qt-cache
+        with:
+          path: qt_build
+          key: qt_build-win32-${{ hashFiles('tc2artnet/scripts/build-qt-windows.ps1') }}
+      
+      - name: "Compile Qt"
+        if: steps.qt-cache.outputs.cache-hit != 'true'
+        run: tc2artnet/scripts/build-qt-windows.ps1
+      
+      - uses: actions/upload-artifact@v2
+        with:
+          name: qt_build-win32
+          path: qt_build/
+  
+  build-libltc:
+    name: Windows libltc Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          path: tc2artnet
+      
+      - uses: actions/cache@v2
+        id: libltc-cache
+        with:
+          path: libltc_build
+          key: libltc_build-win32-${{ hashFiles('tc2artnet/scripts/build-libltc-windows.sh') }}
+      
+      - name: "Install mingw-64"
+        if: steps.libltc-cache.outputs.cache-hit != 'true'
+        run: sudo apt update && sudo apt install -y mingw-w64
+      
+      - name: "Compile libltc"
+        if: steps.libltc-cache.outputs.cache-hit != 'true'
+        run: chmod +x tc2artnet/scripts/* && tc2artnet/scripts/build-libltc-windows.sh
+      
+      - uses: actions/upload-artifact@v2
+        with:
+          name: libltc_build-win32
+          path: libltc_build/
+
+  build-tc2artnet:
+    name: "Build tc2artnet"
+    needs: [build-qt, build-libltc]
+    runs-on: windows-latest
+    steps:      
+      - uses: actions/checkout@v2
+        with:
+          repository: zcz3/tc2artnet
+          path: tc2artnet
+      
+      - uses: actions/download-artifact@v2
+        with:
+          name: qt_build-win32
+          path: qt_build
+      
+      - uses: actions/download-artifact@v2
+        with:
+          name: libltc_build-win32
+          path: libltc_build
+      
+      - run: tc2artnet/scripts/build-windows.ps1
+      
+      - uses: actions/upload-artifact@v2
+        with:
+          name: tc2artnet-windows-${{ github.sha }}
+          path: tc2artnet.exe
