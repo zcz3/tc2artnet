@@ -50,8 +50,12 @@ win32 {
 #   $ make
 #   $ sudo make install
 
-LIBS += -L$$PWD/../libltc-win32/lib -lltc
-INCLUDEPATH += $$PWD/../libltc-win32/include
+LIBS += -L$$PWD/libltc_build/lib -L$$PWD/../libltc_build/lib -lltc
+INCLUDEPATH += $$PWD/libltc_build/include $$PWD/../libltc_build/include
+
+win32:release {
+  QMAKE_LFLAGS_RELEASE+=-static
+}
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
